@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
-namespace GraphMyGaff.Azure.FunctionApp.Core;
+namespace GraphMyGaff.Azure.FunctionApp.Core.Catalogues;
 
 public class GetCataloguesHttpTrigger
 {
@@ -15,9 +15,17 @@ public class GetCataloguesHttpTrigger
     }
 
     [Function(nameof(GetCataloguesHttpTrigger))]
-    public IActionResult Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequest req)
+    public IActionResult Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
     {
         _logger.LogInformation("C# HTTP trigger function processed a request.");
-        return new OkObjectResult("Welcome to Azure Functions!");
+
+        var name = "anon";
+        
+        var stringValues = req.Query["name"];
+        if (stringValues.Count > 0)
+        {
+            name = stringValues[0];
+        }
+        return new OkObjectResult($"Welcome {name}");
     }
 }
