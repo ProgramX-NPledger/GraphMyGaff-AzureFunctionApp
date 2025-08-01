@@ -263,4 +263,10 @@ paket-files/
 __pycache__/
 *.pyc
 
+# For the project
 local.settings.json
+
+# Azurite Storage emulation
+__azurite_db_*.json
+__blobstorage__/
+__queuestorage__/
