@@ -1,6 +1,9 @@
+using System.Net;
+using GraphMyGaff.Azure.FunctionApp.Core.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 
 namespace GraphMyGaff.Azure.FunctionApp.Core;
@@ -32,23 +35,46 @@ public class CatalogueHttpTrigger
         return new OkObjectResult($"Welcome {name} {id ?? null}");
     }
 
-    record NewCatalogue(
-        string id,
-        string name);
+    // public record NewCatalogue(
+    //     string id,
+    //     string name,
+    //     string type);
 
+    public class CreateCatalogueResponse
+    {
+        [CosmosDBOutput("graphmygaff","volatile",Connection = "CosmosDbConnection")]
+        public Catalogue? NewCatalogue { get; set; }
+
+        public HttpResponseData? HttpResponse { get; set; }
+    }
+    
     [Function(nameof(CatalogueHttpTrigger.CreateCatalogue))]
-    public async Task<IActionResult> CreateCatalogue([HttpTrigger(AuthorizationLevel.Function, "post", Route = "catalogue")] HttpRequest req)
+    public async Task<CreateCatalogueResponse> CreateCatalogue([HttpTrigger(AuthorizationLevel.Function, "post", Route = "catalogue")] HttpRequestData req)
     {
         _logger.LogInformation("C# HTTP trigger function processed a request to create a catalogue.");
 
         // Here you would typically read the request body and create a new catalogue item.
         // For simplicity, we are returning a static response.
-        var newCatalogue = await req.ReadFromJsonAsync<NewCatalogue>();
+        var newCatalogue = await req.ReadFromJsonAsync<Catalogue>();
         if (newCatalogue == null)
         {
-            return new BadRequestObjectResult("Invalid catalogue data.");
+            var createCatalogueResponse = new CreateCatalogueResponse()
+            {
+                HttpResponse = req.CreateResponse(HttpStatusCode.BadRequest),
+                NewCatalogue = null
+            };
+            createCatalogueResponse.HttpResponse.WriteString("Invalid request body");
+            return createCatalogueResponse;
         }
 
-        return new CreatedResult($"/catalogue/{newCatalogue.id}", newCatalogue);
+        var httpResponse = req.CreateResponse(HttpStatusCode.Created);
+
+        return new CreateCatalogueResponse
+        {
+            HttpResponse = httpResponse,
+            NewCatalogue = newCatalogue
+        };
+        
+        //return new CreatedResult($"/catalogue/{newCatalogue.id}", newCatalogue);
     }
 }
