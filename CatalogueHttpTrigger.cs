@@ -15,7 +15,7 @@ public class CatalogueHttpTrigger
     }
 
     [Function(nameof(CatalogueHttpTrigger.GetCatalogue))]
-    public async Task<IActionResult> GetCatalogue([HttpTrigger(AuthorizationLevel.Function, "get", Route = "catalogue")] HttpRequest req)
+    public async Task<IActionResult> GetCatalogue([HttpTrigger(AuthorizationLevel.Function, "get", Route = "catalogue/{id:guid?}")] HttpRequest req, Guid? id=null)
     {
         _logger.LogInformation("C# HTTP trigger function processed a request.");
 
@@ -26,7 +26,10 @@ public class CatalogueHttpTrigger
         {
             name = stringValues[0];
         }
-        return new OkObjectResult($"Welcome {name}");
+        
+        // if not found, return a 404
+        // return req.CreateResponse(HttpStatusCode.NotFound)
+        return new OkObjectResult($"Welcome {name} {id ?? null}");
     }
 
     record NewCatalogue(
